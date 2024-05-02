@@ -1,0 +1,164 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_CLIENTS 100
+#define MAX_COMMANDS 50
+#define MAX_ITEMS 50
+
+// Structure pour représenter un client
+struct Client {
+    int id_client;
+    char nom[50];
+    char prenom[50];
+    char num_tel[15];
+    float montant_depense;
+};
+
+// Structure pour représenter un article
+struct Article {
+    char nom[50];
+    float prix;
+};
+
+// Structure pour représenter une commande
+struct Commande {
+    int id_commande;
+    struct Client client;
+    struct Article items[MAX_ITEMS];
+    int quantites[MAX_ITEMS];
+    int nombre_articles;
+    float total;
+    char type_paiement[10]; // "especes" ou "carte"
+};
+
+// Liste des clients enregistrés
+struct Client clients[MAX_CLIENTS];
+int nombre_clients = 0;
+
+// Liste des commandes enregistrées
+struct Commande commandes[MAX_COMMANDS];
+int nombre_commandes = 0;
+
+// Fonction pour ajouter un client
+void ajouterClient() {
+    printf("Entrez le nom du client : ");
+    scanf("%s", clients[nombre_clients].nom);
+    printf("Entrez le prénom du client : ");
+    scanf("%s", clients[nombre_clients].prenom);
+    printf("Entrez le numéro de téléphone du client : ");
+    scanf("%s", clients[nombre_clients].num_tel);
+    clients[nombre_clients].id_client = nombre_clients + 1;
+    clients[nombre_clients].montant_depense = 0;
+    nombre_clients++;
+}
+
+// Fonction pour afficher la liste des clients
+void afficherClients() {
+    printf("\nListe des clients :\n");
+    for (int i = 0; i < nombre_clients; i++) {
+        printf("%d. %s %s\n", clients[i].id_client, clients[i].prenom, clients[i].nom);
+    }
+}
+
+// Fonction pour afficher une facture numérique
+void afficherFacture(struct Commande commande) {
+    printf("\n----- Facture -----\n");
+    printf("Client : %s %s\n", commande.client.prenom, commande.client.nom);
+    printf("Numéro de téléphone : %s\n", commande.client.num_tel);
+    printf("Articles :\n");
+    for (int i = 0; i < commande.nombre_articles; i++) {
+        printf("- %s : %.2f DH x %d\n", commande.items[i].nom, commande.items[i].prix, commande.quantites[i]);
+    }
+    printf("Total : %.2f DH\n", commande.total);
+    printf("Type de paiement : %s\n", commande.type_paiement);
+    printf("-------------------\n");
+}
+
+// Fonction pour ajouter un article
+void ajouterArticle() {
+    printf("Entrez le nom de l'article : ");
+    char nom_article[50];
+    scanf("%s", nom_article);
+
+    int index = -1;
+    for (int i = 0; i < nombre_commandes; i++) {
+        for (int j = 0; j < commandes[i].nombre_articles; j++) {
+            if (strcmp(commandes[i].items[j].nom, nom_article) == 0) {
+                index = i;
+                break;
+            }
+        }
+        if (index != -1) {
+            break;
+        }
+    }
+
+    if (index != -1) {
+        printf("Article déjà ajouté à la commande du client %s %s.\n", commandes[index].client.prenom, commandes[index].client.nom);
+        return;
+    }
+
+    struct Article article;
+    strcpy(article.nom, nom_article);
+    printf("Entrez le prix de l'article : ");
+    scanf("%f", &article.prix);
+
+    struct Commande *commande = &commandes[nombre_commandes];
+    commande->id_commande = nombre_commandes + 1;
+    commande->client = clients[0]; // On attribue le premier client par défaut
+    commande->items[commande->nombre_articles] = article;
+    commande->quantites[commande->nombre_articles] = 1;
+    commande->total += article.prix;
+    commande->nombre_articles++;
+    nombre_commandes++;
+
+    printf("Entrez le type de paiement (especes ou carte) : ");
+    scanf("%s", commande->type_paiement);
+
+    afficherFacture(*commande);
+
+    // Demander à l'utilisateur s'il veut passer à la commande suivante
+    char reponse;
+    printf("Voulez-vous passer à la commande suivante ? (O/N) : ");
+    scanf(" %c", &reponse);
+    if (reponse == 'O' || reponse == 'o') {
+        ajouterArticle(); // Appel récursif pour ajouter une nouvelle commande
+    }
+}
+
+// Fonction pour afficher le menu principal
+void menuPrincipal() {
+    char choix;
+    do {
+        printf("\nMenu Principal\n");
+        printf("1. Ajouter un client\n");
+        printf("2. Ajouter un article\n");
+        printf("3. Afficher la liste des clients\n");
+        printf("4. Quitter\n");
+        printf("Votre choix : ");
+        scanf(" %c", &choix);
+
+        switch (choix) {
+            case '1':
+                ajouterClient();
+                break;
+            case '2':
+                ajouterArticle();
+                break;
+            case '3':
+                afficherClients();
+                break;
+            case '4':
+                printf("Au revoir !\n");
+                break;
+            default:
+                printf("Choix invalide. Veuillez réessayer.\n");
+        }
+    } while (choix != '4');
+}
+
+int main() {
+    menuPrincipal();
+    return 0;
+}
